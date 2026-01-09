@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Планировщик дня - Интерактивный трекер задач</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <!-- Шапка с переключателем темы -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-calendar-check"></i>
+                    <h1>Планировщик дня</h1>
+                </div>
+                <div class="header-controls">
+                    <button id="themeToggle" class="theme-toggle" aria-label="Переключить тему">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Навигация -->
+    <nav class="nav" id="mainNav">
+        <div class="container">
+            <ul class="nav-list">
+                <li><a href="#dashboard" class="nav-link active" data-page="dashboard">
+                    <i class="fas fa-home"></i> <span>Дашборд</span>
+                </a></li>
+                <li><a href="#tasks" class="nav-link" data-page="tasks">
+                    <i class="fas fa-tasks"></i> <span>Мои задачи</span>
+                </a></li>
+                <li><a href="#habits" class="nav-link" data-page="habits">
+                    <i class="fas fa-check-circle"></i> <span>Привычки</span>
+                </a></li>
+                <li><a href="#weekly" class="nav-link" data-page="weekly">
+                    <i class="fas fa-calendar-week"></i> <span>Недельный план</span>
+                </a></li>
+                <li><a href="#calendar" class="nav-link" data-page="calendar">
+                    <i class="fas fa-calendar-alt"></i> <span>Календарь</span>
+                </a></li>
+                <li><a href="#analytics" class="nav-link" data-page="analytics">
+                    <i class="fas fa-chart-pie"></i> <span>Аналитика</span>
+                </a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Основной контент -->
+    <main class="main">
+        <div class="container">
+            <!-- Страница Дашборд -->
+            <div id="page-dashboard" class="page active">
+                <div class="page-header">
+                    <h2>Добро пожаловать! 👋</h2>
+                    <p>Вот краткий обзор ваших задач на сегодня</p>
+                </div>
+
+                <!-- KPI карточки -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <div class="kpi-value" id="kpi-total">0</div>
+                            <div class="kpi-label">Всего задач</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <div class="kpi-value" id="kpi-completed">0</div>
+                            <div class="kpi-label">Выполнено</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                            <i class="fas fa-spinner"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <div class="kpi-value" id="kpi-inprogress">0</div>
+                            <div class="kpi-label">В процессе</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <div class="kpi-value" id="kpi-percentage">0%</div>
+                            <div class="kpi-label">Процент выполнения</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Быстрое добавление задачи -->
+                <div class="quick-add-section">
+                    <h3>Быстрое добавление задачи</h3>
+                    <div class="quick-add-form">
+                        <input type="text" id="quickTaskInput" placeholder="Введите название задачи...">
+                        <button id="quickAddBtn" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Добавить
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Задачи на сегодня -->
+                <div class="today-tasks-section">
+                    <h3>Задачи на сегодня</h3>
+                    <div id="todayTasksList" class="today-tasks-list">
+                        <!-- Задачи будут добавлены через JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Страница Мои задачи -->
+            <div id="page-tasks" class="page">
+                <div class="page-header">
+                    <h2>Мои задачи</h2>
+                    <button class="btn btn-primary" id="addTaskBtn">
+                        <i class="fas fa-plus"></i> Добавить задачу
+                    </button>
+                </div>
+
+                <!-- Фильтры -->
+                <div class="filters">
+                    <select id="filterCategory" class="filter-select">
+                        <option value="all">Все категории</option>
+                        <option value="work">Работа</option>
+                        <option value="personal">Личное</option>
+                        <option value="health">Здоровье</option>
+                        <option value="learning">Обучение</option>
+                        <option value="hobby">Хобби</option>
+                    </select>
+                    <select id="filterType" class="filter-select">
+                        <option value="all">Все типы</option>
+                        <option value="daily">Ежедневные</option>
+                        <option value="weekly">Еженедельные</option>
+                        <option value="monthly">Месячные</option>
+                        <option value="once">Разовые</option>
+                    </select>
+                    <select id="filterPriority" class="filter-select">
+                        <option value="all">Все приоритеты</option>
+                        <option value="high">Высокий</option>
+                        <option value="medium">Средний</option>
+                        <option value="low">Низкий</option>
+                    </select>
+                    <select id="filterStatus" class="filter-select">
+                        <option value="all">Все статусы</option>
+                        <option value="not-started">Не начато</option>
+                        <option value="in-progress">В процессе</option>
+                        <option value="completed">Выполнено</option>
+                    </select>
+                    <input type="text" id="searchTasks" class="search-input" placeholder="🔍 Поиск задач...">
+                </div>
+
+                <!-- Список задач -->
+                <div id="tasksList" class="tasks-grid">
+                    <!-- Задачи будут добавлены через JS -->
+                </div>
+            </div>
+
+            <!-- Страница Привычки -->
+            <div id="page-habits" class="page">
+                <div class="page-header">
+                    <h2>Трекер привычек</h2>
+                    <button class="btn btn-primary" id="addHabitBtn">
+                        <i class="fas fa-plus"></i> Добавить привычку
+                    </button>
+                </div>
+
+                <div id="habitsList" class="habits-list">
+                    <!-- Привычки будут добавлены через JS -->
+                </div>
+            </div>
+
+            <!-- Страница Недельный план -->
+            <div id="page-weekly" class="page">
+                <div class="page-header">
+                    <h2>Недельный план</h2>
+                    <p>Планируйте свою неделю по временным слотам</p>
+                </div>
+
+                <div class="weekly-legend">
+                    <span class="legend-item"><span class="legend-color" style="background: #667eea;"></span> Работа</span>
+                    <span class="legend-item"><span class="legend-color" style="background: #f093fb;"></span> Здоровье</span>
+                    <span class="legend-item"><span class="legend-color" style="background: #4facfe;"></span> Питание</span>
+                    <span class="legend-item"><span class="legend-color" style="background: #43e97b;"></span> Обучение</span>
+                    <span class="legend-item"><span class="legend-color" style="background: #fa709a;"></span> Встречи</span>
+                    <span class="legend-item"><span class="legend-color" style="background: #feca57;"></span> Хобби</span>
+                </div>
+
+                <div class="weekly-planner">
+                    <div class="weekly-header">
+                        <div class="time-column">Время</div>
+                        <div>Пн</div>
+                        <div>Вт</div>
+                        <div>Ср</div>
+                        <div>Чт</div>
+                        <div>Пт</div>
+                        <div>Сб</div>
+                        <div>Вс</div>
+                    </div>
+                    <div class="weekly-body" id="weeklyBody">
+                        <!-- Временные слоты будут добавлены через JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Страница Календарь -->
+            <div id="page-calendar" class="page">
+                <div class="page-header">
+                    <h2>Календарь</h2>
+                    <div class="calendar-controls">
+                        <button class="btn-icon" id="prevMonth"><i class="fas fa-chevron-left"></i></button>
+                        <span id="currentMonth">Январь 2026</span>
+                        <button class="btn-icon" id="nextMonth"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+
+                <div class="calendar" id="calendar">
+                    <!-- Календарь будет добавлен через JS -->
+                </div>
+            </div>
+
+            <!-- Страница Аналитика -->
+            <div id="page-analytics" class="page">
+                <div class="page-header">
+                    <h2>Аналитика и статистика</h2>
+                    <button class="btn btn-secondary" id="exportDataBtn">
+                        <i class="fas fa-download"></i> Экспорт данных
+                    </button>
+                </div>
+
+                <!-- KPI для аналитики -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <div class="kpi-value" id="analytics-total">0</div>
+                            <div class="kpi-label">Всего задач</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <div class="kpi-value" id="analytics-completed">0</div>
+                            <div class="kpi-label">Выполнено задач</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                            <i class="fas fa-spinner"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <div class="kpi-value" id="analytics-inprogress">0</div>
+                            <div class="kpi-label">В процессе</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <div class="kpi-value" id="analytics-percentage">0%</div>
+                            <div class="kpi-label">Процент выполнения</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Графики -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h3>Распределение по статусам</h3>
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Задачи по категориям</h3>
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Задачи по дням недели</h3>
+                        <canvas id="weekdayChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Динамика выполнения</h3>
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Плановое vs Фактическое время</h3>
+                        <canvas id="timeChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Приоритеты задач</h3>
+                        <canvas id="priorityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Модальное окно добавления/редактирования задачи -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="taskModalTitle">Добавить задачу</h3>
+                <button class="modal-close" id="closeTaskModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="taskForm">
+                    <input type="hidden" id="taskId">
+                    
+                    <div class="form-group">
+                        <label for="taskName">Название задачи *</label>
+                        <input type="text" id="taskName" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="taskCategory">Категория *</label>
+                            <select id="taskCategory" required>
+                                <option value="work">Работа</option>
+                                <option value="personal">Личное</option>
+                                <option value="health">Здоровье</option>
+                                <option value="learning">Обучение</option>
+                                <option value="hobby">Хобби</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="taskType">Тип повторения *</label>
+                            <select id="taskType" required>
+                                <option value="once">Разовая</option>
+                                <option value="daily">Ежедневная</option>
+                                <option value="weekly">Еженедельная</option>
+                                <option value="monthly">Месячная</option>
+                                <option value="custom">Настраиваемое</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Продвинутое расписание -->
+                    <div id="advancedSchedule" class="advanced-schedule" style="display: none;">
+                        <!-- Выбор дней недели -->
+                        <div class="form-group" id="weekdaySelector" style="display: none;">
+                            <label>Дни недели</label>
+                            <div class="weekday-selector">
+                                <label class="weekday-checkbox">
+                                    <input type="checkbox" name="weekdays" value="1">
+                                    <span>Пн</span>
+                                </label>
+                                <label class="weekday-checkbox">
+                                    <input type="checkbox" name="weekdays" value="2">
+                                    <span>Вт</span>
+                                </label>
+                                <label class="weekday-checkbox">
+                                    <input type="checkbox" name="weekdays" value="3">
+                                    <span>Ср</span>
+                                </label>
+                                <label class="weekday-checkbox">
+                                    <input type="checkbox" name="weekdays" value="4">
+                                    <span>Чт</span>
+                                </label>
+                                <label class="weekday-checkbox">
+                                    <input type="checkbox" name="weekdays" value="5">
+                                    <span>Пт</span>
+                                </label>
+                                <label class="weekday-checkbox">
+                                    <input type="checkbox" name="weekdays" value="6">
+                                    <span>Сб</span>
+                                </label>
+                                <label class="weekday-checkbox">
+                                    <input type="checkbox" name="weekdays" value="0">
+                                    <span>Вс</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Интервал повторений -->
+                        <div class="form-group" id="intervalSelector" style="display: none;">
+                            <label for="taskInterval">Повторять каждые N дней</label>
+                            <div class="interval-input-group">
+                                <input type="number" id="taskInterval" min="1" max="365" value="1" placeholder="1">
+                                <span>дней</span>
+                            </div>
+                        </div>
+
+                        <!-- Выбор дат месяца -->
+                        <div class="form-group" id="monthDaysSelector" style="display: none;">
+                            <label>Дни месяца</label>
+                            <div class="month-days-selector">
+                                <div class="month-days-grid">
+                                    <!-- Дни 1-31 будут добавлены через JS -->
+                                </div>
+                                <label class="month-day-checkbox special">
+                                    <input type="checkbox" id="lastDayOfMonth">
+                                    <span>Последний день месяца</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Даты исключений -->
+                        <div class="form-group">
+                            <label>Исключения (даты, когда НЕ выполнять)</label>
+                            <div class="exceptions-container">
+                                <input type="date" id="exceptionDate" placeholder="Выберите дату">
+                                <button type="button" class="btn btn-secondary" id="addException">
+                                    <i class="fas fa-plus"></i> Добавить
+                                </button>
+                            </div>
+                            <div id="exceptionsList" class="exceptions-list">
+                                <!-- Исключения будут добавлены через JS -->
+                            </div>
+                        </div>
+
+                        <!-- Дата окончания повторений -->
+                        <div class="form-group">
+                            <label for="taskRecurrenceEnd">Повторять до (необязательно)</label>
+                            <input type="date" id="taskRecurrenceEnd" placeholder="Бесконечно">
+                            <small style="color: var(--text-secondary); font-size: 0.85rem; display: block; margin-top: 0.5rem;">
+                                Оставьте пустым для бесконечного повторения
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="taskPriority">Приоритет *</label>
+                            <select id="taskPriority" required>
+                                <option value="low">Низкий</option>
+                                <option value="medium" selected>Средний</option>
+                                <option value="high">Высокий</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="taskStatus">Статус *</label>
+                            <select id="taskStatus" required>
+                                <option value="not-started">Не начато</option>
+                                <option value="in-progress">В процессе</option>
+                                <option value="completed">Выполнено</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="taskStartDate">Дата начала</label>
+                            <input type="date" id="taskStartDate">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="taskEndDate">Дата окончания</label>
+                            <input type="date" id="taskEndDate">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="taskPlannedTime">Плановое время (мин)</label>
+                            <input type="number" id="taskPlannedTime" min="0">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="taskActualTime">Фактическое время (мин)</label>
+                            <input type="number" id="taskActualTime" min="0">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="taskNotes">Примечания</label>
+                        <textarea id="taskNotes" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelTaskBtn">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно добавления привычки -->
+    <div id="habitModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Добавить привычку</h3>
+                <button class="modal-close" id="closeHabitModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="habitForm">
+                    <div class="form-group">
+                        <label for="habitName">Название привычки *</label>
+                        <input type="text" id="habitName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="habitCategory">Категория *</label>
+                        <select id="habitCategory" required>
+                            <option value="health">Здоровье</option>
+                            <option value="personal">Личное</option>
+                            <option value="learning">Обучение</option>
+                            <option value="work">Работа</option>
+                        </select>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelHabitBtn">Отмена</button>
+                        <button type="submit" class="btn btn-primary">Добавить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно задач дня (для календаря) -->
+    <div id="dayTasksModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="dayTasksModalTitle">Задачи на день</h3>
+                <button class="modal-close" id="closeDayTasksModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="dayTasksContent">
+                    <!-- Задачи будут добавлены через JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
