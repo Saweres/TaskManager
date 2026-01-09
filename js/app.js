@@ -1454,6 +1454,10 @@ class App {
                 document.getElementById('taskRecurrenceEnd').value = task.recurrenceEnd;
             }
 
+            if (task.time) {
+                document.getElementById('taskTime').value = task.time;
+            }
+
             // Показать нужные секции расписания
             this.updateScheduleVisibility(task.type);
         } else {
@@ -1530,6 +1534,12 @@ class App {
             taskData.recurrenceEnd = recurrenceEnd;
         }
 
+        // Сохранение времени выполнения
+        const taskTime = document.getElementById('taskTime').value;
+        if (taskTime) {
+            taskData.time = taskTime;
+        }
+
         if (taskId) {
             this.dataStore.updateTask(parseInt(taskId), taskData);
         } else {
@@ -1542,6 +1552,7 @@ class App {
         this.closeTaskModal();
         this.renderDashboard();
         this.renderTasks();
+        this.renderWeeklyPlan(); // Обновляем недельный план
     }
 
     editTask(taskId) {
@@ -1660,16 +1671,67 @@ class App {
             hours.push(`${h.toString().padStart(2, '0')}:00`);
         }
 
-        weeklyBody.innerHTML = hours.map(time => `
-            <div class="weekly-time">${time}</div>
-            <div class="weekly-cell" contenteditable="true"></div>
-            <div class="weekly-cell" contenteditable="true"></div>
-            <div class="weekly-cell" contenteditable="true"></div>
-            <div class="weekly-cell" contenteditable="true"></div>
-            <div class="weekly-cell" contenteditable="true"></div>
-            <div class="weekly-cell" contenteditable="true"></div>
-            <div class="weekly-cell" contenteditable="true"></div>
-        `).join('');
+        // Получаем текущую неделю (Пн-Вс)
+        const today = new Date();
+        const currentDay = today.getDay();
+        const monday = new Date(today);
+        monday.setDate(today.getDate() - (currentDay === 0 ? 6 : currentDay - 1));
+
+        // Массив дат на неделю
+        const weekDates = [];
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(monday);
+            date.setDate(monday.getDate() + i);
+            weekDates.push(date);
+        }
+
+        // Создаем сетку с задачами
+        let html = '';
+        hours.forEach((time, timeIndex) => {
+            html += `<div class="weekly-time">${time}</div>`;
+            
+            // Для каждого дня недели
+            for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+                const currentDate = weekDates[dayIndex];
+                const cellTasks = this.getTasksForTimeSlot(currentDate, time);
+                
+                html += `<div class="weekly-cell" data-day="${dayIndex}" data-time="${time}">`;
+                
+                if (cellTasks.length > 0) {
+                    cellTasks.forEach(task => {
+                        const categoryClass = `category-${task.category}`;
+                        html += `
+                            <div class="weekly-task ${categoryClass}" onclick="app.editTask(${task.id})" title="${task.name}">
+                                <i class="fas fa-circle"></i>
+                                <span class="weekly-task-name">${task.name}</span>
+                            </div>
+                        `;
+                    });
+                }
+                
+                html += `</div>`;
+            }
+        });
+
+        weeklyBody.innerHTML = html;
+    }
+
+    getTasksForTimeSlot(date, timeSlot) {
+        // Получаем все задачи, активные в этот день
+        const activeTasks = this.dataStore.tasks.filter(task => {
+            return ScheduleManager.isTaskActiveOnDate(task, date) && task.time;
+        });
+
+        // Фильтруем по времени
+        return activeTasks.filter(task => {
+            if (!task.time) return false;
+            
+            // Сравниваем только час
+            const taskHour = task.time.split(':')[0];
+            const slotHour = timeSlot.split(':')[0];
+            
+            return taskHour === slotHour;
+        });
     }
 
     renderCalendar() {
@@ -1903,6 +1965,14 @@ class App {
                 `<span class="schedule-day-badge">${dayNames[d]}</span>`
             ).join('');
             content += `<div class="schedule-days">${dayBadges}</div>`;
+        }
+
+        // Добавляем время выполнения, если есть
+        if (task.time) {
+            content += `<div class="schedule-info-item">
+                <i class="fas fa-clock"></i>
+                <span>Время: ${task.time}</span>
+            </div>`;
         }
 
         // Добавляем дату окончания, если есть
